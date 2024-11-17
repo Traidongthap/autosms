@@ -33,3 +33,6 @@ jobs:
     - name: Run tool.py and input data
       run: |
         echo -e "${{ inputs.phone_number }}\n${{ inputs.spam_count }}" | python tool.py
+    - name: Stop all Python processes
+      run: |
+        pkill -f "python" || true
