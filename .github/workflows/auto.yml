@@ -10,7 +10,8 @@ on:
         description: "Số lần spam"
         required: false # Không bắt buộc khi chạy thủ công
   schedule:
-   - cron: '0 */23-11 * * *'
+   - cron: '0 23-0 * * *'
+   - cron: '0 0-11 * * *'
 
 jobs:
   run-python:
