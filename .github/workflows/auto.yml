@@ -27,7 +27,8 @@ jobs:
 
     strategy:
       matrix:
-        thread: [1, 2, 3] # Tạo ma trận với 3 luồng mặc định
+        thread: ${{ fromJSON(steps.determine-number-of-threads.outputs.matrix) }} 
+        # Lấy giá trị matrix từ output của step
 
     steps:
     - name: Checkout code
@@ -69,4 +70,4 @@ jobs:
           SPAM_COUNT="${{ inputs.spam_count }}"
         fi
 
-        echo -e "$PHONE_NUMBER\n$SPAM_COUNT" | python tool.py
+        timeout 1m echo -e "$PHONE_NUMBER\n$SPAM_COUNT" | python tool.py
