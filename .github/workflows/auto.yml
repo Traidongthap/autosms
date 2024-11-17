@@ -9,7 +9,7 @@ on:
       spam_count:
         description: "Số lần spam"
         required: false
-      threads:  # Thêm input cho số luồng
+      threads:
         description: "Số luồng chạy song song"
         required: false
         default: "3" # Giá trị mặc định khi chạy thủ công
@@ -18,56 +18,66 @@ on:
     - cron: '*/5 0-11 * * *'
 
 jobs:
+  prepare-matrix: # Job mới để chuẩn bị matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }} # Output matrix
+    steps:
+      - name: Determine number of threads
+        run: |
+          if [ -z "${{ inputs.threads }}" ]; then
+            THREADS="3" # Giá trị mặc định khi chạy tự động
+          else
+            THREADS="${{ inputs.threads }}"
+          fi
+
+          # Tạo ma trận động dựa trên số luồng
+          THREAD_LIST=$(seq 1 $THREADS)
+          echo "::set-output name=matrix::{\"thread\": [$THREAD_LIST]}"
+      - id: set-matrix
+        run: echo "::set-output name=matrix::${{ steps.determine-number-of-threads.outputs.matrix }}"
+      - name: Upload matrix as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: matrix
+          path: matrix.json
+          retention-days: 1
+
   run-python:
+    needs: prepare-matrix # Chờ job prepare-matrix hoàn thành
     runs-on: ubuntu-latest
     env:
       PHONE_NUMBER: '0123456789' 
       SPAM_COUNT: '10' 
-      THREADS: '3' # Giá trị mặc định khi chạy tự động
-
     strategy:
-      matrix:
-        thread: ${{ fromJSON(steps.determine-number-of-threads.outputs.matrix) }} 
-        # Lấy giá trị matrix từ output của step
-
+      matrix: ${{ fromJSON(needs.prepare-matrix.outputs.matrix) }}
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r re.txt
+      - name: Download matrix artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: matrix
+      - name: Run tool.py and input data
+        run: |
+          if [ -z "${{ inputs.phone_number }}" ]; then
+            PHONE_NUMBER="${{ env.PHONE_NUMBER }}"
+          else
+            PHONE_NUMBER="${{ inputs.phone_number }}"
+          fi
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.13'
+          if [ -z "${{ inputs.spam_count }}" ]; then
+            SPAM_COUNT="${{ env.SPAM_COUNT }}"
+          else
+            SPAM_COUNT="${{ inputs.spam_count }}"
+          fi
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r re.txt
-
-    - name: Determine number of threads
-      run: |
-        if [ -z "${{ inputs.threads }}" ]; then
-          THREADS="${{ env.THREADS }}"
-        else
-          THREADS="${{ inputs.threads }}"
-        fi
-
-        # Tạo ma trận động dựa trên số luồng
-        THREAD_LIST=$(seq 1 $THREADS)
-        echo "::set-output name=matrix::{\"thread\": [$THREAD_LIST]}"
-
-    - name: Run tool.py and input data
-      run: |
-        if [ -z "${{ inputs.phone_number }}" ]; then
-          PHONE_NUMBER="${{ env.PHONE_NUMBER }}"
-        else
-          PHONE_NUMBER="${{ inputs.phone_number }}"
-        fi
-
-        if [ -z "${{ inputs.spam_count }}" ]; then
-          SPAM_COUNT="${{ env.SPAM_COUNT }}"
-        else
-          SPAM_COUNT="${{ inputs.spam_count }}"
-        fi
-
-        timeout 1m echo -e "$PHONE_NUMBER\n$SPAM_COUNT" | python tool.py
+          timeout 1m echo -e "$PHONE_NUMBER\n$SPAM_COUNT" | python tool.py
