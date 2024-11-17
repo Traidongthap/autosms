@@ -35,7 +35,12 @@ jobs:
           THREAD_LIST=$(seq 1 $THREADS)
           echo "::set-output name=matrix::{\"thread\": [$THREAD_LIST]}"
       - id: set-matrix
-        run: echo "::set-output name=matrix::${{ steps.determine-number-of-threads.outputs.matrix }}"
+  run: |
+    # Tạo file matrix.json với nội dung là giá trị matrix
+    echo '${{ steps.determine-number-of-threads.outputs.matrix }}' > matrix.json
+
+    # In ra output matrix
+    echo "::set-output name=matrix::${{ steps.determine-number-of-threads.outputs.matrix }}"
       - name: Upload matrix as artifact
         uses: actions/upload-artifact@v3
         with:
