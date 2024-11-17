@@ -9,32 +9,23 @@ on:
         default: "0123456789"
       spam_count:
         description: "Số lần spam"
-        required: true 
+        required: true
         default: "10"
   schedule:
-    # Chạy mỗi giờ từ 6h sáng đến 6h tối (UTC+7)
-    - cron: '0 23-11 * * *'
+    - cron: '0 6-18 * * *' # Chạy từ 6h sáng đến 6h tối hàng ngày
 
 jobs:
   run-python:
     runs-on: ubuntu-latest
-    
-    steps:
-    - name: Check time
-      run: |
-        hour=$(TZ='Asia/Ho_Chi_Minh' date +%H)
-        if [ $hour -lt 6 ] || [ $hour -ge 18 ]; then
-          echo "Outside working hours (6:00-18:00)"
-          exit 0
-        fi
 
+    steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Python  
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.11'
 
     - name: Install dependencies
       run: |
@@ -42,10 +33,5 @@ jobs:
         pip install -r re.txt
 
     - name: Run tool.py and input data
-      env:
-        DEFAULT_PHONE: "0123456789"  # Điền số điện thoại mặc định của bạn
-        DEFAULT_COUNT: "10"          # Điền số lần spam mặc định
       run: |
-        PHONE="${{ github.event.inputs.phone_number || env.DEFAULT_PHONE }}"
-        COUNT="${{ github.event.inputs.spam_count || env.DEFAULT_COUNT }}"
-        echo -e "$PHONE\n$COUNT" | python tool.py
+        echo -e "${{ inputs.phone_number }}\n${{ inputs.spam_count }}" | python tool.py
