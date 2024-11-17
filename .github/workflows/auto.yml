@@ -5,18 +5,19 @@ on:
     inputs:
       phone_number:
         description: "Số điện thoại để chạy tool"
-        required: true
-        default: "0123456789"
+        required: false # Không bắt buộc khi chạy thủ công
       spam_count:
         description: "Số lần spam"
-        required: true
-        default: "10"
+        required: false # Không bắt buộc khi chạy thủ công
   schedule:
-    - cron: '0 6-18 * * *' # Chạy từ 6h sáng đến 6h tối hàng ngày
+    - cron: '0 6-18 * * *' 
 
 jobs:
   run-python:
     runs-on: ubuntu-latest
+    env:
+      PHONE_NUMBER: '0' # Giá trị mặc định cho số điện thoại
+      SPAM_COUNT: '0' # Giá trị mặc định cho số lần spam
 
     steps:
     - name: Checkout code
@@ -25,7 +26,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.13'
 
     - name: Install dependencies
       run: |
@@ -34,4 +35,17 @@ jobs:
 
     - name: Run tool.py and input data
       run: |
-        echo -e "${{ inputs.phone_number }}\n${{ inputs.spam_count }}" | python tool.py
+        # Kiểm tra xem có input từ người dùng không
+        if [ -z "${{ inputs.phone_number }}" ]; then
+          PHONE_NUMBER="${{ env.PHONE_NUMBER }}"
+        else
+          PHONE_NUMBER="${{ inputs.phone_number }}"
+        fi
+
+        if [ -z "${{ inputs.spam_count }}" ]; then
+          SPAM_COUNT="${{ env.SPAM_COUNT }}"
+        else
+          SPAM_COUNT="${{ inputs.spam_count }}"
+        fi
+
+        echo -e "$PHONE_NUMBER\n$SPAM_COUNT" | python tool.py
