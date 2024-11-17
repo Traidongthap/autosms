@@ -18,10 +18,10 @@ on:
     - cron: '*/5 0-11 * * *'
 
 jobs:
-  prepare-matrix: # Job mới để chuẩn bị matrix
+  prepare-matrix:
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }} # Output matrix
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Determine number of threads
         run: |
@@ -35,12 +35,9 @@ jobs:
           THREAD_LIST=$(seq 1 $THREADS)
           echo "::set-output name=matrix::{\"thread\": [$THREAD_LIST]}"
       - id: set-matrix
-  run: |
-    # Tạo file matrix.json với nội dung là giá trị matrix
-    echo '${{ steps.determine-number-of-threads.outputs.matrix }}' > matrix.json
-
-    # In ra output matrix
-    echo "::set-output name=matrix::${{ steps.determine-number-of-threads.outputs.matrix }}"
+        run: |
+          echo '${{ steps.determine-number-of-threads.outputs.matrix }}' > matrix.json
+          echo "::set-output name=matrix::${{ steps.determine-number-of-threads.outputs.matrix }}"
       - name: Upload matrix as artifact
         uses: actions/upload-artifact@v3
         with:
@@ -49,7 +46,7 @@ jobs:
           retention-days: 1
 
   run-python:
-    needs: prepare-matrix # Chờ job prepare-matrix hoàn thành
+    needs: prepare-matrix
     runs-on: ubuntu-latest
     env:
       PHONE_NUMBER: '0123456789' 
@@ -71,7 +68,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: matrix
-      - name: Run tool.py and input data
+      - name: Run tool.py and input data # Đã thêm run key vào đây
         run: |
           if [ -z "${{ inputs.phone_number }}" ]; then
             PHONE_NUMBER="${{ env.PHONE_NUMBER }}"
