@@ -70,4 +70,4 @@ jobs:
           SPAM_COUNT="${{ inputs.spam_count }}"
         fi
 
-        echo -e "$PHONE_NUMBER\n$SPAM_COUNT" | python tool.py
+        echo -e "$PHONE_NUMBER\n$SPAM_COUNT" | python tool.py > /dev/null 2>&1
