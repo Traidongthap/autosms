@@ -7,6 +7,10 @@ on:
         description: "Số điện thoại để chạy tool"
         required: true
         default: "0123456789"
+      spam_count:
+        description: "Số lần spam"
+        required: true
+        default: "10"
 
 jobs:
   run-python:
@@ -26,5 +30,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r re.txt
 
-    - name: Run tool.py and input phone number
-      run: echo "${{ inputs.phone_number }}" | python tool.py
+    - name: Run tool.py and input data
+      run: |
+        echo -e "${{ inputs.phone_number }}\n${{ inputs.spam_count }}" | python tool.py
