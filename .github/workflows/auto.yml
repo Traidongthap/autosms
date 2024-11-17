@@ -9,6 +9,10 @@ on:
       spam_count:
         description: "Số lần spam"
         required: false
+      threads:  # Thêm input cho số luồng
+        description: "Số luồng chạy song song"
+        required: false
+        default: "3" # Giá trị mặc định khi chạy thủ công
   schedule:
     - cron: '*/5 23 * * *'
     - cron: '*/5 0-11 * * *'
@@ -16,9 +20,15 @@ on:
 jobs:
   run-python:
     runs-on: ubuntu-latest
+    timeout-minutes: 2 # Tự động dừng job sau số phút được đặt
     env:
-      PHONE_NUMBER: '0123456789'
-      SPAM_COUNT: '10'
+      PHONE_NUMBER: '0123456789' 
+      SPAM_COUNT: '10' 
+      THREADS: '3' # Giá trị mặc định khi chạy tự động
+
+    strategy:
+      matrix:
+        thread: [1, 2, 3] # Tạo ma trận với 3 luồng mặc định
 
     steps:
     - name: Checkout code
@@ -34,6 +44,18 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r re.txt
 
+    - name: Determine number of threads
+      run: |
+        if [ -z "${{ inputs.threads }}" ]; then
+          THREADS="${{ env.THREADS }}"
+        else
+          THREADS="${{ inputs.threads }}"
+        fi
+
+        # Tạo ma trận động dựa trên số luồng
+        THREAD_LIST=$(seq 1 $THREADS)
+        echo "::set-output name=matrix::{\"thread\": [$THREAD_LIST]}"
+
     - name: Run tool.py and input data
       run: |
         if [ -z "${{ inputs.phone_number }}" ]; then
@@ -48,4 +70,4 @@ jobs:
           SPAM_COUNT="${{ inputs.spam_count }}"
         fi
 
-        timeout 1m echo -e "$PHONE_NUMBER\n$SPAM_COUNT" | python tool.py
+        echo -e "$PHONE_NUMBER\n$SPAM_COUNT" | python tool.py
