@@ -18,6 +18,15 @@ on:
 jobs:
   run-python:
     runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check time
+      run: |
+        hour=$(TZ='Asia/Ho_Chi_Minh' date +%H)
+        if [ $hour -lt 6 ] || [ $hour -ge 18 ]; then
+          echo "Outside working hours (6:00-18:00)"
+          exit 0
+        fi
 
     - name: Checkout code
       uses: actions/checkout@v3
@@ -25,7 +34,7 @@ jobs:
     - name: Set up Python  
       uses: actions/setup-python@v4
       with:
-        python-version: '3.13'
+        python-version: '3.x'
 
     - name: Install dependencies
       run: |
